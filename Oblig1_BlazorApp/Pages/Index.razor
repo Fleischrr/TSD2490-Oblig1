@@ -1,12 +1,29 @@
 ﻿@page "/"
 
-<PageTitle>Index</PageTitle>
+<style>
+    .container {
+        width: 400px;
+    }
 
-<h1>TSD2490 - Oblig 1</h1>
+    button {
+        width: 100px;
+        height: 100px;
+        font-size: 50px;
+    }
+</style>
 
-Welcome to your new app.
-
-<SurveyPrompt Title="How is Blazor working for you?" />
+<div class="container">
+    <div class="row">
+        @foreach (var animal in shuffeldAnimals)
+        {
+            <div class="col-3">
+                <button type="button" class="btn btn-outline-dark">
+                    <h1>@animal</h1>
+                </button>
+            </div>
+        }
+    </div>
+</div>
 
 @code {
     List<string> animalEmoji = new List<string>()
@@ -18,6 +35,20 @@ Welcome to your new app.
         "🐱","🐱",
         "🦁","🦁",
         "🐯","🐯",
-        "🐹","🐹",
+        "🐹","🐹"
     };
+
+    List<string> shuffeldAnimals = new List<string>();
+    protected override void OnInitialized()
+    {
+        setUpGame();
+    }
+
+    private void setUpGame()
+    {
+        Random random = new Random();
+        shuffeldAnimals = animalEmoji
+            .OrderBy(item => random.Next())
+            .ToList();
+    }
 }
