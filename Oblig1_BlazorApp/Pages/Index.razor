@@ -14,10 +14,14 @@
 
 <div class="container">
     <div class="row">
-        @foreach (var animal in shuffeldAnimals)
+        @for (var animalNumber = 0; animalNumber < shuffeldAnimals.Count; animalNumber++)
         {
+            var animal = shuffeldAnimals[animalNumber];
+            var uniqueDescription = $"Button #{animalNumber}";
+
             <div class="col-3">
-                <button type="button" class="btn btn-outline-dark">
+                <button @onclick="@(() => ButtonClick(animal, uniqueDescription))" 
+                    type="button" class="btn btn-outline-dark">
                     <h1>@animal</h1>
                 </button>
             </div>
@@ -47,8 +51,33 @@
     private void setUpGame()
     {
         Random random = new Random();
-        shuffeldAnimals = animalEmoji
-            .OrderBy(item => random.Next())
-            .ToList();
+        shuffeldAnimals = animalEmoji.OrderBy(item => random.Next()).ToList();
+    }
+
+    string lastAnimalFound = string.Empty;
+    string lastDescription = string.Empty;
+
+    private void ButtonClick(string animal, string animalDescription)
+    {
+        if (lastAnimalFound == string.Empty)
+        {
+            //første museklikk. Lagre valg.
+            lastAnimalFound = animal;
+            lastDescription = animalDescription;
+        }
+        else if ((lastAnimalFound == animal) && (animalDescription != lastDescription))
+        {
+            //to like funnet. Reset valg til neste
+            lastAnimalFound = string.Empty;
+
+            //bytte ut funnet dyr men tom string for å skjule
+            shuffeldAnimals = shuffeldAnimals.Select(a => a.Replace(animal, string.Empty)).ToList();
+
+        }
+        else
+        {
+            //valg av ulike par. Reset valg til neste
+            lastAnimalFound = string.Empty;
+        }
     }
 }
