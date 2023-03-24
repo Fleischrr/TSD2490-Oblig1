@@ -1,4 +1,5 @@
 ﻿@page "/"
+@using System.Timers
 
 <style>
     .container {
@@ -27,6 +28,12 @@
             </div>
         }
     </div>
+    <div>
+        <h2>Matches found: @matchesFound</h2>
+    </div>
+    <div>
+        <h2>Time: @timeDisplay</h2>
+    </div>
 </div>
 
 @code {
@@ -43,8 +50,16 @@
     };
 
     List<string> shuffeldAnimals = new List<string>();
+    int matchesFound = 0;
+    Timer timer;
+    int tenthsOfSecondsElapsed = 0;
+    string timeDisplay;
+
     protected override void OnInitialized()
     {
+        timer = new Timer(100);
+        timer.Elapsed += Timer_Tick;
+
         setUpGame();
     }
 
@@ -52,6 +67,9 @@
     {
         Random random = new Random();
         shuffeldAnimals = animalEmoji.OrderBy(item => random.Next()).ToList();
+
+        matchesFound = 0;
+        tenthsOfSecondsElapsed = 0;
     }
 
     string lastAnimalFound = string.Empty;
@@ -64,6 +82,9 @@
             //første museklikk. Lagre valg.
             lastAnimalFound = animal;
             lastDescription = animalDescription;
+
+            //start timer ved første klikk
+            timer.Start();
         }
         else if ((lastAnimalFound == animal) && (animalDescription != lastDescription))
         {
@@ -73,11 +94,32 @@
             //bytte ut funnet dyr men tom string for å skjule
             shuffeldAnimals = shuffeldAnimals.Select(a => a.Replace(animal, string.Empty)).ToList();
 
+            matchesFound++;
+
+            if (matchesFound == 8)
+            {
+                timer.Stop();
+                timeDisplay += " - Play Again?";
+
+                setUpGame();
+            }
+
         }
         else
         {
             //valg av ulike par. Reset valg til neste
             lastAnimalFound = string.Empty;
         }
+    }
+
+    private void Timer_Tick(object source, ElapsedEventArgs e)
+    {
+        InvokeAsync(() =>
+        {
+            tenthsOfSecondsElapsed++;
+            timeDisplay = (tenthsOfSecondsElapsed / 10F).ToString("0.0s");
+            StateHasChanged();
+        });
+
     }
 }
