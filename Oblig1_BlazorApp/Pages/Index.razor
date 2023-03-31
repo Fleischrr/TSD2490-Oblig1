@@ -15,15 +15,15 @@
 
 <div class="container">
     <div class="row">
-        @for (var animalNumber = 0; animalNumber < shuffeldAnimals.Count; animalNumber++)
+        @for (var emojiNumber = 0; emojiNumber < shuffeldEmoji.Count; emojiNumber++)
         {
-            var animal = shuffeldAnimals[animalNumber];
-            var uniqueDescription = $"Button #{animalNumber}";
+            var emoji = shuffeldEmoji[emojiNumber];
+            var uniqueDescription = $"Button #{emojiNumber}";
 
             <div class="col-3">
-                <button @onclick="@(() => ButtonClick(animal, uniqueDescription))" 
+                <button @onclick="@(() => ButtonClick(emoji, uniqueDescription))" 
                     type="button" class="btn btn-outline-dark">
-                    <h1>@animal</h1>
+                    <h1>@emoji</h1>
                 </button>
             </div>
         }
@@ -36,7 +36,9 @@
     </div>
 </div>
 
+
 @code {
+    //liste av dyr-emojies
     List<string> animalEmoji = new List<string>()
 {
         "🐶","🐶",
@@ -49,12 +51,40 @@
         "🐹","🐹"
     };
 
-    List<string> shuffeldAnimals = new List<string>();
+    //liste av ball-emojies
+    List<string> ballEmoji = new List<string>()
+    {
+        "⚽","⚽",
+        "⚾","⚾",
+        "🥎","🥎",
+        "🏀","🏀",
+        "🏐","🏐",
+        "🏈","🏈",
+        "🏉","🏉",
+        "🎱","🎱"
+    };
+
+    //liste av klokke-emojies
+    List<string> clockEmoji = new List<string>()
+    {
+        "🕛","🕛",
+        "🕒","🕒",
+        "🕕","🕕",
+        "🕘","🕘",
+        "🕜","🕜",
+        "🕟","🕟",
+        "🕢","🕢",
+        "🕦","🕦"
+    };
+
+    List<string> shuffeldEmoji = new List<string>();
     int matchesFound = 0;
+
     Timer timer;
     int tenthsOfSecondsElapsed = 0;
     string timeDisplay;
 
+    /* På oppstart */
     protected override void OnInitialized()
     {
         timer = new Timer(100);
@@ -63,36 +93,54 @@
         setUpGame();
     }
 
+    /* Oppsett funksjon */
     private void setUpGame()
     {
         Random random = new Random();
-        shuffeldAnimals = animalEmoji.OrderBy(item => random.Next()).ToList();
+        List<string> chosenEmojiTheme;
+        int randInt = random.Next(3);   //tilfelldig tall mellom 0 og 2
+
+        if (0 == randInt)
+        {
+            chosenEmojiTheme = animalEmoji;
+        } 
+        else if (1 == randInt)
+        {
+            chosenEmojiTheme = ballEmoji;
+        }
+        else
+        {
+            chosenEmojiTheme = clockEmoji;
+        }
+
+        shuffeldEmoji = chosenEmojiTheme.OrderBy(item => random.Next()).ToList();
 
         matchesFound = 0;
         tenthsOfSecondsElapsed = 0;
     }
 
-    string lastAnimalFound = string.Empty;
+    string lastEmojiFound = string.Empty;
     string lastDescription = string.Empty;
 
-    private void ButtonClick(string animal, string animalDescription)
+    /* Hva å gjøre ved muse-klikk */
+    private void ButtonClick(string emoji, string emojiDescription)
     {
-        if (lastAnimalFound == string.Empty)
+        if (lastEmojiFound == string.Empty)
         {
             //første museklikk. Lagre valg.
-            lastAnimalFound = animal;
-            lastDescription = animalDescription;
+            lastEmojiFound = emoji;
+            lastDescription = emojiDescription;
 
             //start timer ved første klikk
             timer.Start();
         }
-        else if ((lastAnimalFound == animal) && (animalDescription != lastDescription))
+        else if ((lastEmojiFound == emoji) && (emojiDescription != lastDescription))
         {
             //to like funnet. Reset valg til neste
-            lastAnimalFound = string.Empty;
+            lastEmojiFound = string.Empty;
 
             //bytte ut funnet dyr men tom string for å skjule
-            shuffeldAnimals = shuffeldAnimals.Select(a => a.Replace(animal, string.Empty)).ToList();
+            shuffeldEmoji = shuffeldEmoji.Select(a => a.Replace(emoji, string.Empty)).ToList();
 
             matchesFound++;
 
@@ -103,15 +151,15 @@
 
                 setUpGame();
             }
-
         }
         else
         {
             //valg av ulike par. Reset valg til neste
-            lastAnimalFound = string.Empty;
+            lastEmojiFound = string.Empty;
         }
     }
 
+    /* Timer init */
     private void Timer_Tick(object source, ElapsedEventArgs e)
     {
         InvokeAsync(() =>
