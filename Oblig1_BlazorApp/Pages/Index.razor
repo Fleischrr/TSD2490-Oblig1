@@ -22,6 +22,17 @@
 
 
 <div class="container">
+    @if (gameOver)
+    {
+        <div style="text-align: center;">
+            <h1>Game Over!</h1>
+        </div>
+    } else if (gameComplete)
+    {
+        <div style ="text-align: center;">
+            <h1>Victory!</h1>
+        </div>
+    }
     <div class="row">
         @for (var emojiNumber = 0; emojiNumber < shuffeldEmoji.Count; emojiNumber++)
         {
@@ -37,15 +48,15 @@
         }
     </div>
     
-    <div>
+    <div style="text-align: center;">
         <h2>Matches found: @matchesFound</h2>
     </div>
     
-    <div>
+    <div style="text-align: center;">
         <h2>Time: @timeDisplay</h2>
     </div>
     
-    <div>
+    <div style="text-align: center;">
         <button @onclick="@(() => StartRestartGame())" type="button" class="btn btn-outline-dark start-restart-button">
             @if (isGameRunning)
             {
@@ -114,8 +125,9 @@
     //spill deklarasjoner.
     List<string> shuffeldEmoji = new List<string>();
     int matchesFound = 0;
-    bool isGameRunning = false;
-
+    
+    bool isGameRunning, gameComplete, gameOver = false;
+    
 
     //sett opp timer samt spill ved oppstart av siden.
     protected override void OnInitialized()
@@ -151,6 +163,8 @@
 
     //håndtere start og restart av spill.
     private void StartRestartGame() {
+        gameComplete = false;
+        gameOver = false;
         
         //hvis spill kjører, stopp timer og reset spill. Ellers start spill.
         if (isGameRunning)
@@ -201,7 +215,7 @@
             if (matchesFound == 8)
             {
                 timer.Stop();
-                timeDisplay += " - Play Again?";
+                gameComplete = true;
             }
         }
         else
@@ -222,7 +236,8 @@
             if (tenthsOfSecondsElapsed == 0)    
             {
                 timer.Stop();
-                timeDisplay = "Times Up! - Play Again?";
+                timeDisplay = "0.0s";
+                gameOver = true;
             }
             else
             {
