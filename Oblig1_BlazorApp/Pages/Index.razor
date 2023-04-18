@@ -6,12 +6,20 @@
         width: 400px;
     }
 
-    button {
+    .emoji-button {
         width: 100px;
         height: 100px;
         font-size: 50px;
     }
+
+    .start-restart-button {
+        width: 200px;
+        height: 100px;
+        font-size: 50px;
+    }
+
 </style>
+
 
 <div class="container">
     <div class="row">
@@ -22,69 +30,94 @@
 
             <div class="col-3">
                 <button @onclick="@(() => ButtonClick(emoji, uniqueDescription))" 
-                    type="button" class="btn btn-outline-dark">
+                    type="button" class="btn btn-outline-dark emoji-button">
                     <h1>@emoji</h1>
                 </button>
             </div>
         }
     </div>
+    
     <div>
         <h2>Matches found: @matchesFound</h2>
     </div>
+    
     <div>
         <h2>Time: @timeDisplay</h2>
     </div>
+    
+    <div>
+        <button @onclick="@(() => StartRestartGame())" type="button" class="btn btn-outline-dark start-restart-button">
+            @if (isGameRunning)
+            {
+                <h1>Restart</h1>
+            }
+            else
+            {
+                <h1>Start</h1>
+            }
+        </button>
+    </div>
+
 </div>
 
 
 @code {
-    //liste av dyr-emojies
-    List<string> animalEmoji = new List<string>()
-{
-        "🐶","🐶",
-        "🐺","🐺",
-        "🐮","🐮",
-        "🦊","🦊",
-        "🐱","🐱",
-        "🦁","🦁",
-        "🐯","🐯",
-        "🐹","🐹"
-    };
 
-    //liste av ball-emojies
-    List<string> ballEmoji = new List<string>()
+    //liste av emoji temaer. 3 temaer med 8 par emoji hver.
+    List<List<string>> emojiThemes = new List<List<string>>()
     {
-        "⚽","⚽",
-        "⚾","⚾",
-        "🥎","🥎",
-        "🏀","🏀",
-        "🏐","🏐",
-        "🏈","🏈",
-        "🏉","🏉",
-        "🎱","🎱"
+        //liste med dyr emoji. 8 par.
+        new List<string>() 
+        { 
+            "🐶","🐶",
+            "🐺","🐺",
+            "🐮","🐮",
+            "🦊","🦊",
+            "🐱","🐱",
+            "🦁","🦁",
+            "🐯","🐯",
+            "🐹","🐹"
+        },
+
+        //liste med ball emoji. 8 par.
+        new List<string>() 
+        { 
+            "⚽","⚽",
+            "⚾","⚾",
+            "🥎","🥎",
+            "🏀","🏀",
+            "🏐","🏐",
+            "🏈","🏈",
+            "🏉","🏉",
+            "🎱","🎱"
+        },
+
+        //liste med klokke emoji. 8 par.
+        new List<string>() 
+        { 
+            "🕛","🕛",
+            "🕒","🕒",
+            "🕕","🕕",
+            "🕘","🕘",
+            "🕜","🕜",
+            "🕟","🕟",
+            "🕢","🕢",
+            "🕦","🕦"
+        }
     };
 
-    //liste av klokke-emojies
-    List<string> clockEmoji = new List<string>()
-    {
-        "🕛","🕛",
-        "🕒","🕒",
-        "🕕","🕕",
-        "🕘","🕘",
-        "🕜","🕜",
-        "🕟","🕟",
-        "🕢","🕢",
-        "🕦","🕦"
-    };
-
-    List<string> shuffeldEmoji = new List<string>();
-    int matchesFound = 0;
-
+    //timer deklarasjoner.
     Timer timer;
     int tenthsOfSecondsElapsed = 0;
     string timeDisplay;
 
-    /* På oppstart */
+    //spill deklarasjoner.
+    List<string> shuffeldEmoji = new List<string>();
+    int matchesFound = 0;
+    bool isGameRunning = false;
+
+
+    //sett opp timer samt spill ved oppstart av siden.
     protected override void OnInitialized()
     {
         timer = new Timer(100);
@@ -93,38 +126,54 @@
         setUpGame();
     }
 
-    /* Oppsett funksjon */
+    //håndtere oppsett spill og blande emoji.
     private void setUpGame()
     {
-        Random random = new Random();
-        List<string> chosenEmojiTheme;
-        int randInt = random.Next(3);   //tilfelldig tall mellom 0 og 2
+        //start på 0 treff og 20 sekunder
+        matchesFound = 0;               
+        tenthsOfSecondsElapsed = 200;   
+        timeDisplay = "20.0s";
 
-        if (0 == randInt)
+        fillEmojiesToScreen();
+    }
+
+    //håndtere blanding av emoji.
+    private void fillEmojiesToScreen()
+    {
+        //tillfeldig tall generator mellom 0 og 2. 3 temaer.
+        Random random = new Random();
+        int randInt = random.Next(3);
+
+        //velge tilfeldig emoji tema og blande de
+        List<string> chosenEmojiTheme = emojiThemes[randInt];
+        shuffeldEmoji = chosenEmojiTheme.OrderBy(item => random.Next()).ToList();
+    }
+
+    //håndtere start og restart av spill.
+    private void StartRestartGame() {
+        
+        //hvis spill kjører, stopp timer og reset spill. Ellers start spill.
+        if (isGameRunning)
         {
-            chosenEmojiTheme = animalEmoji;
-        } 
-        else if (1 == randInt)
-        {
-            chosenEmojiTheme = ballEmoji;
+            timer.Stop();
+            isGameRunning = false;
+            setUpGame();
         }
         else
         {
-            chosenEmojiTheme = clockEmoji;
+            timer.Start();
+            isGameRunning = true;
         }
-
-        shuffeldEmoji = chosenEmojiTheme.OrderBy(item => random.Next()).ToList();
-
-        matchesFound = 0;
-        tenthsOfSecondsElapsed = 0;
     }
 
+    //deklarasjoner for å holde styr på valgt emoji.
     string lastEmojiFound = string.Empty;
     string lastDescription = string.Empty;
 
-    /* Hva å gjøre ved muse-klikk */
+    //håndtere museklikk på emoji.
     private void ButtonClick(string emoji, string emojiDescription)
-    {
+    {       
+        //første klikk på emoji, to like funnet, eller ulike par.
         if (lastEmojiFound == string.Empty)
         {
             //første museklikk. Lagre valg.
@@ -132,41 +181,57 @@
             lastDescription = emojiDescription;
 
             //start timer ved første klikk
-            timer.Start();
+            if (!isGameRunning)
+            {
+                timer.Start();
+                isGameRunning = true;
+            }
+            
         }
         else if ((lastEmojiFound == emoji) && (emojiDescription != lastDescription))
         {
-            //to like funnet. Reset valg til neste
+            //to like funnet. Reset valg.
             lastEmojiFound = string.Empty;
 
-            //bytte ut funnet dyr men tom string for å skjule
+            //bytte ut funnet dyr men tom string for å fjerne de.
             shuffeldEmoji = shuffeldEmoji.Select(a => a.Replace(emoji, string.Empty)).ToList();
 
+            //iterer antall treff. Stopp ved 8 treff.
             matchesFound++;
-
             if (matchesFound == 8)
             {
                 timer.Stop();
                 timeDisplay += " - Play Again?";
-
-                setUpGame();
             }
         }
         else
         {
-            //valg av ulike par. Reset valg til neste
+            //valg av ulike par. Reset valg.
             lastEmojiFound = string.Empty;
         }
     }
 
-    /* Timer init */
+
+    //oppdatere tidssaldo.
     private void Timer_Tick(object source, ElapsedEventArgs e)
     {
         InvokeAsync(() =>
         {
-            tenthsOfSecondsElapsed++;
-            timeDisplay = (tenthsOfSecondsElapsed / 10F).ToString("0.0s");
+            //trekk fra 1/10 sekund fra tidssaldo. Sjekk om tid er ute, eller vanlig oppdatering.
+            tenthsOfSecondsElapsed--;   
+            if (tenthsOfSecondsElapsed == 0)    
+            {
+                timer.Stop();
+                timeDisplay = "Times Up! - Play Again?";
+            }
+            else
+            {
+                timeDisplay = (tenthsOfSecondsElapsed / 10F).ToString("0.0s");
+            }
+
+            //oppdaterer siden.
             StateHasChanged();
+
         });
 
     }
