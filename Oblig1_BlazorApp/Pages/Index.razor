@@ -13,67 +13,99 @@
     }
 
     .start-restart-button {
-        width: 200px;
-        height: 100px;
+        width: 150px;
+        height: 75px;
         font-size: 50px;
     }
+
 
 </style>
 
 
 <div class="container">
-    @if (gameOver)
+    
+    @if (usernameEnterd) 
     {
-        <div style="text-align: center;">
-            <h1>Game Over!</h1>
-        </div>
-    } else if (gameComplete)
-    {
-        <div style ="text-align: center;">
-            <h1>Victory!</h1>
-        </div>
-    }
-    <div class="row">
-        @for (var emojiNumber = 0; emojiNumber < shuffeldEmoji.Count; emojiNumber++)
+        @if (gameOver)
         {
-            var emoji = shuffeldEmoji[emojiNumber];
-            var uniqueDescription = $"Button #{emojiNumber}";
-
-            <div class="col-3">
-                <button @onclick="@(() => ButtonClick(emoji, uniqueDescription))" 
-                    type="button" class="btn btn-outline-dark emoji-button">
-                    <h1>@emoji</h1>
-                </button>
+            <div style="text-align: center;">
+                <h1>Game Over!</h1>
             </div>
         }
-    </div>
-    
-    <div style="text-align: center;">
-        <h2>Matches found: @matchesFound</h2>
-    </div>
-    
-    <div style="text-align: center;">
-        <h2>Time: @timeDisplay</h2>
-    </div>
-    
-    <div style="text-align: center;">
-        <button @onclick="@(() => StartRestartGame())" type="button" class="btn btn-outline-dark start-restart-button">
-            @if (isGameRunning)
+        else if (gameComplete)
+        {
+            <div style ="text-align: center;">
+                <h1>Victory!</h1>
+            </div>
+        }
+
+        <div class="row">
+            @for (var emojiNumber = 0; emojiNumber < shuffeldEmoji.Count; emojiNumber++)
             {
-                <h1>Restart</h1>
+                var emoji = shuffeldEmoji[emojiNumber];
+                var uniqueDescription = $"Button #{emojiNumber}";
+
+                <div class="col-3">
+                    <button @onclick="@(() => ButtonClick(emoji, uniqueDescription))" 
+                        type="button" class="btn btn-outline-dark emoji-button">
+                        <h1>@emoji</h1>
+                    </button>
+                </div>
             }
-            else
-            {
-                <h1>Start</h1>
-            }
-        </button>
+        </div>
+        
+        <div style="text-align: center;">
+            <h2>Matches found: @matchesFound</h2>
+        </div>
+
+        <div style="text-align: center;">
+            <h2>Time: @timeDisplay</h2>
+        </div>
+
+        <div style="text-align: center;">
+            <button @onclick="@(() => StartRestartGame())" type="button" class="btn btn-outline-dark start-restart-button">
+                @if (isGameRunning)
+                {
+                    <h1>Restart</h1>
+                }
+                else
+                {
+                    <h1>Start</h1>
+                }
+            </button>
+        </div>
+    }
+
+    @if (!usernameEnterd)
+    {
+        <div style="text-align: center;">
+            <label>To save your score enter your username below:</label>
+            <input type="text" @bind-value="@userInput" />
+            <button @onclick="@(() => SaveUsername())" type="button" class="btn btn-outline-dark">Save</button>
+        </div>
+
+    }
+    
+    <div style="text-align: center;">
+        <h3>
+            Highscores
+        </h3>
     </div>
+    <div>
+        <ol>
+            @foreach (var player in players.Where(p => !String.IsNullOrEmpty(p.getUsername())).OrderByDescending(p => p.getHighscore()))
+            {
+                <li>@player.getUsername(): @player.getHighscore()</li>
+            }
+        </ol>
+    </div>
+
+    
 
 </div>
 
 
 @code {
-
     //liste av emoji temaer. 3 temaer med 8 par emoji hver.
     List<List<string>> emojiThemes = new List<List<string>>()
     {
@@ -117,6 +149,29 @@
         }
     };
 
+    //håndtere navn og highscore.
+    private class Player
+    {
+        private string username = string.Empty;
+        private string highscore = "0.0s";
+
+        public Player(string username, string highscore)
+        {
+            this.username = username;
+            this.highscore = highscore;
+        }
+
+        public string getUsername()
+        {
+            return username;
+        }
+
+        public string getHighscore()
+        {
+            return highscore;
+        }
+    }
+
     //timer deklarasjoner.
     Timer timer;
     int tenthsOfSecondsElapsed = 0;
@@ -125,9 +180,10 @@
     //spill deklarasjoner.
     List<string> shuffeldEmoji = new List<string>();
     int matchesFound = 0;
-    
-    bool isGameRunning, gameComplete, gameOver = false;
-    
+    bool isGameRunning, gameComplete, gameOver, usernameEnterd = false;
+
+    string userInput = string.Empty;
+    List<Player> players = new List<Player>();
 
     //sett opp timer samt spill ved oppstart av siden.
     protected override void OnInitialized()
@@ -161,16 +217,24 @@
         shuffeldEmoji = chosenEmojiTheme.OrderBy(item => random.Next()).ToList();
     }
 
+    //håndtere lagring av brukernavn.
+    private void SaveUsername()
+    {
+        usernameEnterd = true;
+    }
+
     //håndtere start og restart av spill.
     private void StartRestartGame() {
         gameComplete = false;
         gameOver = false;
-        
+
+
         //hvis spill kjører, stopp timer og reset spill. Ellers start spill.
         if (isGameRunning)
         {
             timer.Stop();
             isGameRunning = false;
+            usernameEnterd = false;
             setUpGame();
         }
         else
@@ -200,7 +264,7 @@
                 timer.Start();
                 isGameRunning = true;
             }
-            
+
         }
         else if ((lastEmojiFound == emoji) && (emojiDescription != lastDescription))
         {
@@ -214,8 +278,7 @@
             matchesFound++;
             if (matchesFound == 8)
             {
-                timer.Stop();
-                gameComplete = true;
+                GameComplete();
             }
         }
         else
@@ -225,6 +288,21 @@
         }
     }
 
+    //håndtering av spill fullført
+    private void GameComplete()
+    {
+        timer.Stop();
+        gameComplete = true;
+        string currentScore = timeDisplay;
+
+        //hvis brukernavn tilstede, legg til i highscore listen.
+        if (usernameEnterd)
+        {
+            players.Add(new Player(userInput, currentScore));
+        }
+        
+        userInput = string.Empty;
+    }
 
     //oppdatere tidssaldo.
     private void Timer_Tick(object source, ElapsedEventArgs e)
