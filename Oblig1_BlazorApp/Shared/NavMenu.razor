@@ -1,6 +1,6 @@
 ﻿<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">Animal Mathcing Game</a>
+        <a class="navbar-brand" href="">Kalkar Games</a>
         <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -10,12 +10,23 @@
 <div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
     <nav class="flex-column">
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="oi oi-home" aria-hidden="true"></span> Home
+            <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
+                <span class="oi oi-puzzle-piece" aria-hidden="true"></span> Matching Game
             </NavLink>
         </div>
     </nav>
 </div>
+
+<div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
+    <nav class="flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/MemoryGame" Match="NavLinkMatch.All">
+                <span class="oi oi-star" aria-hidden="true"></span> Memory Game
+            </NavLink>
+        </div>
+    </nav>
+</div>
+
 
 @code {
     private bool collapseNavMenu = true;
