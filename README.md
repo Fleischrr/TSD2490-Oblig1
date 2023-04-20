@@ -1,3 +1,3 @@
 # TSD2490-Oblig1
- Animal Matching Game (Blazor Webapp).
+  Emoji Matching Game and Memory Game (Blazor Webapp).
 	Match the emojies before the time runs out!
