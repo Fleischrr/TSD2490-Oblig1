@@ -1,4 +1,4 @@
-﻿@page "/"
+﻿@page "/MemoryGame"
 @using System.Timers
 
 <style>
@@ -43,12 +43,14 @@
             @for (var emojiNumber = 0; emojiNumber < shuffeldEmoji.Count; emojiNumber++)
             {
                 var emoji = shuffeldEmoji[emojiNumber];
+                var notEmoji = emptyEmoji[emojiNumber];
                 var uniqueDescription = $"Button #{emojiNumber}";
+                int index = emojiNumber;
 
                 <div class="col-3">
-                    <button @onclick="@(() => ButtonClick(emoji, uniqueDescription))" 
+                    <button @onclick="@(() => ButtonClick(emoji, uniqueDescription, index))" 
                         type="button" class="btn btn-outline-dark emoji-button">
-                        <h1>@emoji</h1>
+                        <h1>@notEmoji</h1>
                     </button>
                 </div>
             }
@@ -106,10 +108,10 @@
 
 
 @code {
+
     //liste av emoji temaer. 3 temaer med 8 par emoji hver.
     List<List<string>> emojiThemes = new List<List<string>>()
     {
-        //liste med dyr emoji. 8 par.
         new List<string>() 
         { 
             "🐶","🐶",
@@ -122,7 +124,6 @@
             "🐹","🐹"
         },
 
-        //liste med ball emoji. 8 par.
         new List<string>() 
         { 
             "⚽","⚽",
@@ -135,7 +136,6 @@
             "🎱","🎱"
         },
 
-        //liste med klokke emoji. 8 par.
         new List<string>() 
         { 
             "🕛","🕛",
@@ -149,7 +149,6 @@
         }
     };
 
-    //håndtere navn og highscore.
     private class Player
     {
         private string username = string.Empty;
@@ -179,13 +178,24 @@
 
     //spill deklarasjoner.
     List<string> shuffeldEmoji = new List<string>();
+    List<string> emptyEmoji = new List<string>()
+    {
+        "", "",
+        "", "",
+        "", "",
+        "", "",
+        "", "",
+        "", "",
+        "", "",
+        "", "",
+    };
+
     int matchesFound = 0;
     bool isGameRunning, gameComplete, gameOver, usernameEnterd = false;
 
     string userInput = string.Empty;
     List<Player> players = new List<Player>();
 
-    //sett opp timer samt spill ved oppstart av siden.
     protected override void OnInitialized()
     {
         timer = new Timer(100);
@@ -194,21 +204,23 @@
         setUpGame();
     }
 
-    //håndtere oppsett spill og blande emoji.
     private void setUpGame()
     {
-        //start på 0 treff og 20 sekunder
+        //start på 0 treff og 40 sekunder
         matchesFound = 0;               
-        tenthsOfSecondsElapsed = 200;   
-        timeDisplay = "20.0";
+        tenthsOfSecondsElapsed = 400;   
+        timeDisplay = "40.0";
+
+        //tømme emptyEmoji og foundEmoji.
+        emptyEmoji = emptyEmoji.Select(e => "").ToList();
+        foundEmoji = new List<string>();
 
         fillEmojiesToScreen();
     }
 
-    //håndtere blanding av emoji.
     private void fillEmojiesToScreen()
     {
-        //tillfeldig tall generator mellom 0 og 2. 3 temaer.
+        //tillfeldig tall generator mellom 0 og 2. For 3 temaer.
         Random random = new Random();
         int randInt = random.Next(3);
 
@@ -217,21 +229,89 @@
         shuffeldEmoji = chosenEmojiTheme.OrderBy(item => random.Next()).ToList();
     }
 
-    //håndtere lagring av brukernavn.
     private void SaveUsername()
     {
         usernameEnterd = true;
     }
 
-    //håndtere start og restart av spill.
+    //deklarasjoner for å holde styr på valgt og vist emoji.
+    string lastEmojiFound = string.Empty;
+    string lastDescription = string.Empty;
+    int lastEmojiIndex;
+    List<string> foundEmoji = new List<string>();
+
+    private async void ButtonClick(string emoji, string emojiDescription, int index)
+    {    
+        if (gameComplete || gameOver)
+        {
+            //spillet er ferdig eller over. Gjør ingenting.
+            return;
+        }
+
+        if ( !foundEmoji.Contains(emoji) )
+        {
+            if (lastEmojiFound == string.Empty)
+            {
+                //første museklikk. Lagre valg.
+                lastEmojiFound = emoji;
+                lastDescription = emojiDescription;
+                lastEmojiIndex = index;
+
+                //vis valgt emoji.
+                emptyEmoji[index] = emoji;
+
+                //hvis første klikk starter timer.
+                if (!isGameRunning)
+                {
+                    timer.Start();
+                    isGameRunning = true;
+                }
+
+            }
+            else if ((lastEmojiFound == emoji) && (emojiDescription != lastDescription))
+            {
+                //to like funnet. Vis emoji og reset valg.
+                foundEmoji.Add(emoji);
+                foundEmoji.Add(lastEmojiFound);
+
+                lastEmojiFound = string.Empty;
+                lastDescription = string.Empty;
+
+                emptyEmoji[index] = emoji;
+
+                //iterer antall treff. Stopp ved 8 treff.
+                matchesFound++;
+                if (matchesFound == 8)
+                {
+                    GameComplete();
+                }
+            }
+            else
+            {
+                //valg av ulike par. Vis trykk, deretter reset valg.
+                emptyEmoji[index] = emoji;
+                await Task.Delay(150);
+
+                emptyEmoji[index] = string.Empty;
+                emptyEmoji[lastEmojiIndex] = string.Empty;
+
+                lastEmojiFound = string.Empty;
+                lastDescription = string.Empty;
+            }
+        }
+    }
+
     private void StartRestartGame() {
+        //tilbakestille variabler.
         gameComplete = false;
         gameOver = false;
+        lastEmojiFound = string.Empty;
+        lastDescription = string.Empty;
 
-
-        //hvis spill kjører, stopp timer og reset spill. Ellers start spill.
+        
         if (isGameRunning)
         {
+            //hvis spill kjører, stopp timer og reset spill.
             timer.Stop();
             isGameRunning = false;
             usernameEnterd = false;
@@ -239,93 +319,49 @@
         }
         else
         {
+            //ellers start spill.
             timer.Start();
             isGameRunning = true;
         }
     }
 
-    //deklarasjoner for å holde styr på valgt emoji.
-    string lastEmojiFound = string.Empty;
-    string lastDescription = string.Empty;
-
-    //håndtere museklikk på emoji.
-    private void ButtonClick(string emoji, string emojiDescription)
-    {       
-        //første klikk på emoji, to like funnet, eller ulike par.
-        if (lastEmojiFound == string.Empty)
-        {
-            //første museklikk. Lagre valg.
-            lastEmojiFound = emoji;
-            lastDescription = emojiDescription;
-
-            //start timer ved første klikk
-            if (!isGameRunning)
-            {
-                timer.Start();
-                isGameRunning = true;
-            }
-
-        }
-        else if ((lastEmojiFound == emoji) && (emojiDescription != lastDescription))
-        {
-            //to like funnet. Reset valg.
-            lastEmojiFound = string.Empty;
-
-            //bytte ut funnet dyr men tom string for å fjerne de.
-            shuffeldEmoji = shuffeldEmoji.Select(a => a.Replace(emoji, string.Empty)).ToList();
-
-            //iterer antall treff. Stopp ved 8 treff.
-            matchesFound++;
-            if (matchesFound == 8)
-            {
-                GameComplete();
-            }
-        }
-        else
-        {
-            //valg av ulike par. Reset valg.
-            lastEmojiFound = string.Empty;
-        }
-    }
-
-    //håndtering av spill fullført
     private void GameComplete()
     {
         timer.Stop();
         gameComplete = true;
         string currentScore = timeDisplay;
 
-        //hvis brukernavn tilstede, legg til i highscore listen.
         if (usernameEnterd)
         {
+            //hvis brukernavn tilstede, legg til i highscore listen og reset brukernavn.
             players.Add(new Player(userInput, currentScore));
+            userInput = string.Empty;
         }
-        
-        userInput = string.Empty;
+
+        //vis alle emoji.
+        emptyEmoji = shuffeldEmoji;
     }
 
-    //oppdatere tidssaldo.
     private void Timer_Tick(object source, ElapsedEventArgs e)
     {
         InvokeAsync(() =>
         {
-            //trekk fra 1/10 sekund fra tidssaldo. Sjekk om tid er ute, eller vanlig oppdatering.
             tenthsOfSecondsElapsed--;   
             if (tenthsOfSecondsElapsed == 0)    
             {
+                //tid er ute. Stop timer, game over, vis alle emoji.
                 timer.Stop();
                 timeDisplay = "0.0";
                 gameOver = true;
+                emptyEmoji = shuffeldEmoji;
             }
             else
             {
+                //vanlig oppdatering av tid.
                 timeDisplay = (tenthsOfSecondsElapsed / 10F).ToString("0.0");
             }
 
-            //oppdaterer siden.
             StateHasChanged();
-
         });
-
     }
 }
